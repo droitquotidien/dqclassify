@@ -1,4 +1,5 @@
 import argparse
+import nis
 import sys
 import csv
 from collections import Counter
@@ -50,23 +51,24 @@ class CsvContext(object):
 		return f"{self.line}:{self.textid}:{self.childid or ''}:{self.kind or ''}:{self.num or ''}:{self.rank or ''}"
 
 
-def set_between_alineas(paragraphs):
-	"""
+def set_between_alineas(paragraphs, catstats:Counter|None=None):
 	categories = []
-	for np in paragraphs:
-		# TEST is np is a ModifyingParagraph else continue
-		cat = np.get('cat')
+	for p in paragraphs:
+		if not isinstance(p, ModifyingParagraph):
+			continue
+		cat = p.category
 		lcat = categories[-1] if categories else None
-		if lcat in (AlineaModifierCategory.OPEN_ALINEA,
-                    AlineaModifierCategory.ALINEA_OPEN_ALINEA_WITH_ARTICLE,
-                    AlineaModifierCategory.ALINEA_OPEN_ALINEA_WITH_SECTION,
-                    AlineaModifierCategory.ALINEA_BETWEEN_ALINEA):
-            if cat == AlineaModifierCategory.NOT_A_MODIFIER:
-                cat = AlineaModifierCategory.ALINEA_BETWEEN_ALINEA
-                np['cat'] = cat
-        categories.append(cat)
-	"""
-	pass
+		if lcat in (ModifierCategory.OPEN_ALINEA,
+				ModifierCategory.OPEN_ALINEA_WITH_ARTICLE,
+				ModifierCategory.OPEN_ALINEA_WITH_SECTION,
+				ModifierCategory.BETWEEN_ALINEA):
+			if cat == ModifierCategory.NOT_MODIFYING:
+				if categories:
+					catstats[ModifierCategory.NOT_MODIFYING] -= 1
+					catstats[ModifierCategory.BETWEEN_ALINEA] += 1
+				cat = ModifierCategory.BETWEEN_ALINEA
+				p.category = cat
+		categories.append(cat)
 
 
 def main():
@@ -80,7 +82,7 @@ def main():
 			jorfreader = csv.reader(f, delimiter='|')
 			context = CsvContext()
 			artid = None  # Article courant
-			art_paragraphs = list()  # Paragraphes de l'article courant
+			art_paragraphs = None  # Paragraphes de l'article courant
 			for i, row in enumerate(jorfreader):
 				context.line = i
 				context.textid = row[0]
@@ -94,10 +96,11 @@ def main():
 					if artid is None:
 						artid = context.childid
 						assert art_paragraphs is None
+						art_paragraphs = list()
 					else:
 						if artid != context.childid:
 							# Nouvel article
-							# TODO: set_between_alineas(art_paragraphs)
+							set_between_alineas(art_paragraphs, categories)
 							# TODO: flush to CSV art_paragraphs
 							art_paragraphs = list()
 							artid = context.childid
