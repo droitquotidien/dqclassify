@@ -17,7 +17,7 @@ tests_require = [
     'pytest-cov',
     ]
 
-setup(name='lgxclassify',
+setup(name='dqclassify',
       version='0.1.0',
       description='classify paragraphs to find modification instructions',
       long_description=README + '\n\n' + CHANGES,
@@ -37,6 +37,7 @@ setup(name='lgxclassify',
       install_requires=requires,
       entry_points="""\
       [console_scripts]
-      lgxclassify = lgxclassify.scripts.classify:main
+      dqclassify_csv = dqclassify.scripts.classify_csv:main
+      dqclassify_test_csv = dqclassify.scripts.test_csv:main
       """,
 )
