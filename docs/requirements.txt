@@ -1,0 +1,8 @@
+sphinx
+furo
+myst-parser
+jupyter
+graphviz
+sphinxcontrib-bibtex
+# apt-get install graphviz
+#zobib
